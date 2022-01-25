@@ -10,8 +10,9 @@ import (
 )
 
 var browseCmd = &cobra.Command{
-	Use:   "browse",
-	Short: "Find out the URL for any git item",
+	Use:     "browse",
+	Aliases: []string{"b"},
+	Short:   "Find out the URL for any git item",
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := os.Stat(args[0]); os.IsNotExist(err) {
 			log.WithFields(log.Fields{
