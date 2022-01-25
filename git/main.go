@@ -15,7 +15,7 @@ import (
 	"gopkg.in/ini.v1"
 )
 
-// Repo holds information about a repository
+// Repo holds information about a repository.
 type Repo struct {
 	Remote string
 	Dir    string
@@ -108,14 +108,14 @@ func (r *Repo) URL(file string, line int) (string, error) {
 	res := make(chan string, 1)
 
 	for _, remote := range remotes {
-		go url(&wg, r, remote, relativeFile, line, res)
+		go getURL(&wg, r, remote, relativeFile, line, res)
 	}
 	wg.Wait()
 
 	return <-res, nil
 }
 
-func url(wg *sync.WaitGroup, r *Repo, remote Remote, relativeFile string, line int, c chan string) {
+func getURL(wg *sync.WaitGroup, r *Repo, remote Remote, relativeFile string, line int, c chan string) {
 	defer wg.Done()
 
 	this, err := remote.File(r.Branch(), relativeFile, line)

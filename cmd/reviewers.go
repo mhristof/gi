@@ -59,5 +59,16 @@ var reviewersCmd = &cobra.Command{
 }
 
 func init() {
+	branch := git.Branch() != git.Main()
+	rootCmd.PersistentFlags().BoolP(
+		"branch", "b", branch,
+		"Detect reviewers for current branch. Enabled when branch name is not 'main'",
+	)
+	rootCmd.PersistentFlags().StringSliceP(
+		"bots", "",
+		[]string{"semantic-release-bot@martynus.net"},
+		"Bot list definition. Used with --human",
+	)
+	rootCmd.PersistentFlags().BoolP("human", "H", true, "Show human reviewers only.")
 	rootCmd.AddCommand(reviewersCmd)
 }

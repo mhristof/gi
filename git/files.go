@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mhristof/git-reviewers/keychain"
-	"github.com/mhristof/git-reviewers/util"
+	//"github.com/mhristof/git-reviewers/keychain"
+	"github.com/mhristof/gi/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 )
@@ -22,7 +22,7 @@ type Git struct {
 	ApprovalsRequired int64
 }
 
-func New() Git {
+func NewApprovers() Git {
 	approvers, required := EligibleApprovers()
 	return Git{
 		Blame:             map[string]struct{}{},
@@ -33,7 +33,7 @@ func New() Git {
 }
 
 func NewFromFiles(files []string) Git {
-	g := New()
+	g := NewApprovers()
 	for _, file := range files {
 		fromBlame := Blame(file)
 		log.WithFields(log.Fields{
@@ -230,7 +230,8 @@ func User(email string) string {
 		return username
 	}
 
-	git, err := gitlab.NewClient(keychain.Item("GITLAB_TOKEN"))
+	//git, err := gitlab.NewClient(keychain.Item("GITLAB_TOKEN"))
+	git, err := gitlab.NewClient(os.Getenv("GITLAB_TOKEN"))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,

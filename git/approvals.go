@@ -9,13 +9,13 @@ import (
 	"strings"
 
 	"github.com/mhristof/gi/util"
-	"github.com/mhristof/git-reviewers/keychain"
+	// "github.com/mhristof/git-reviewers/keychain"
 	log "github.com/sirupsen/logrus"
 )
 
 func curl(url string) []byte {
 	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Set("PRIVATE-TOKEN", keychain.Item("GITLAB_TOKEN"))
+	//req.Header.Set("PRIVATE-TOKEN", keychain.Item("GITLAB_TOKEN"))
 
 	client := &http.Client{}
 
@@ -81,14 +81,14 @@ type ApprovalRulesResp []struct {
 	} `json:"users"`
 }
 
-func Remote() string {
+func RemoteURL() string {
 	url := strings.TrimSuffix(util.Eval("git config --get remote.origin.url")[0], "\n")
 
 	return url
 }
 
 func Project() string {
-	remote := Remote()
+	remote := RemoteURL()
 
 	if !strings.HasPrefix(remote, "git@gitlab.com") {
 		log.WithFields(log.Fields{
