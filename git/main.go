@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -21,10 +22,8 @@ type Repo struct {
 	Dir    string
 }
 
-var (
-	// ErrorNotAGitRepo is thrown when the given folder/config is not a git repository
-	ErrorNotAGitRepo = errors.New("not a git repository")
-)
+// ErrorNotAGitRepo is thrown when the given folder/config is not a git repository
+var ErrorNotAGitRepo = errors.New("not a git repository")
 
 func findGitFolder(path string) (string, error) {
 	parts := strings.Split(path, "/")
@@ -72,7 +71,6 @@ func (r *Repo) Branch() string {
 			"err":   err,
 			"r.Dir": r.Dir,
 		}).Panic("Cannot find .git/HEAD")
-
 	}
 
 	headS := strings.Split(strings.Split(string(head), "\n")[0], " ")[1]
@@ -92,7 +90,6 @@ func (r *Repo) URL(file string, line int) (string, error) {
 			"err":  err,
 			"file": file,
 		}).Panic("Cannot calculate abs path")
-
 	}
 
 	relativeFile := strings.TrimPrefix(strings.Replace(absFile, r.Dir, "", -1), "/")
@@ -123,4 +120,10 @@ func getURL(wg *sync.WaitGroup, r *Repo, remote Remote, relativeFile string, lin
 		return
 	}
 	c <- this
+}
+
+func redact(in string) string {
+	token := regexp.MustCompile(`glpat-\w*`)
+
+	return token.ReplaceAllString(in, "glpat-xxxxxx")
 }

@@ -9,14 +9,14 @@ SHELL := bash
 .DELETE_ON_ERROR:
 .ONESHELL:
 
-GIT_REF := $(shell git rev-parse --short HEAD)
-GIT_TAG := $(shell git name-rev --tags --name-only $(GIT_REF))
+GIT_TAG := $(shell git describe --tags --always --dirty=+)
+
 
 .PHONY: all
-all: ./bin/gi.darwin ./bin/gi.linux
+all: ./bin/gi.darwin
 
 ./bin/gi.%: $(shell find ./ -name '*.go')
-	GOOS=$* go build -o $@ -ldflags "-X github.com/mhristof/gi/cmd.version=$(GIT_TAG)+$(GIT_REF)" main.go
+	GOOS=$* go build -o $@ -ldflags "-X github.com/mhristof/gi/cmd.version=$(GIT_TAG)" main.go
 
 .PHONY: fast-test
 fast-test:  ## Run fast tests

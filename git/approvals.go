@@ -8,14 +8,14 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/mhristof/gi/keychain"
 	"github.com/mhristof/gi/util"
-	// "github.com/mhristof/git-reviewers/keychain"
 	log "github.com/sirupsen/logrus"
 )
 
 func curl(url string) []byte {
 	req, _ := http.NewRequest("GET", url, nil)
-	//req.Header.Set("PRIVATE-TOKEN", keychain.Item("GITLAB_TOKEN"))
+	req.Header.Set("PRIVATE-TOKEN", keychain.Item("GITLAB_TOKEN"))
 
 	client := &http.Client{}
 

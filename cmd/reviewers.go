@@ -36,16 +36,17 @@ var reviewersCmd = &cobra.Command{
 			"git.Branch()": git.Branch(),
 			"git.Main()":   git.Main(),
 			"branch":       branch,
+			"args":         args,
 		}).Debug("current branch")
 
-		if branch {
-			args = util.Eval(fmt.Sprintf("git diff --name-only %s", git.Main()))
-			// empty line at the end of the array
-			args = args[0 : len(args)-1]
-		}
-
 		if len(args) == 0 {
-			args = git.Files()
+			if branch {
+				args = util.Eval(fmt.Sprintf("git diff --name-only %s", git.Main()))
+				// empty line at the end of the array
+				args = args[0 : len(args)-1]
+			} else {
+				args = git.Files()
+			}
 		}
 
 		g := git.NewFromFiles(args)
