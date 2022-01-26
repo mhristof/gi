@@ -22,18 +22,23 @@ var rootCmd = &cobra.Command{
 
 // Verbose Increase verbosity.
 func Verbose(cmd *cobra.Command) {
-	verbose, err := cmd.Flags().GetBool("verbose")
+	verbose, err := cmd.Flags().GetCount("verbose")
 	if err != nil {
 		log.Panic(err)
 	}
 
-	if verbose {
+	switch verbose {
+	case 1:
 		log.SetLevel(log.DebugLevel)
+	case 2:
+		log.SetLevel(log.TraceLevel)
+	default:
+		log.SetLevel(log.InfoLevel)
 	}
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Increase verbosity")
+	rootCmd.PersistentFlags().CountP("verbose", "v", "Increase verbosity")
 	rootCmd.PersistentFlags().BoolP("dryrun", "n", false, "Dry run")
 }
 

@@ -10,6 +10,9 @@ import (
 
 // Eval Run a system command and return the stdout lines.
 func Eval(command string) []string {
+	log.WithFields(log.Fields{
+		"command": command,
+	}).Trace("eval")
 	cmd := exec.Command("/bin/bash", "-c", command)
 
 	var stdout, stderr bytes.Buffer

@@ -102,9 +102,21 @@ func RepoReviewers() []string {
 // return authors
 // }
 
+func isTracked(file string) bool {
+	out := util.Eval(fmt.Sprintf("git ls-files --error-unmatch %s", file))
+
+	return out[0] == file
+}
+
 // FileCodeOwners Figure out who the code owners are for the given file.
 func Blame(file string) map[string]struct{} {
-	blame := util.Eval(fmt.Sprintf("git blame --line-porcelain %s", file))
+	branch := Branch()
+
+	if !isTracked(file) {
+		branch = Main()
+	}
+
+	blame := util.Eval(fmt.Sprintf("git blame --line-porcelain %s %s", branch, file))
 
 	users := map[string]struct{}{}
 
