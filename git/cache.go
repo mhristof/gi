@@ -10,7 +10,6 @@ import (
 )
 
 func userCacheDump(cache map[string]string) {
-	// dont forget to import "encoding/json"
 	cacheJSON, err := json.MarshalIndent(cache, "", "    ")
 	if err != nil {
 		panic(err)

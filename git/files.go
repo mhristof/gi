@@ -90,18 +90,6 @@ func RepoReviewers() []string {
 	return authors
 }
 
-// FileReviewer Get at list of suitable reviewers for the given file. This
-// function will check `git blame` and people that have merged changes in the
-// file.
-// func FileReviewer(file string) []string {
-// 	var authors []string
-// 	authors = append(authors, FileCodeOwners(file)...)
-// 	authors = append(authors, MergeRequests(file)...)
-// 	authors = util.Uniq(authors)
-
-// return authors
-// }
-
 func isTracked(file string) bool {
 	out := util.Eval(fmt.Sprintf("git ls-files --error-unmatch %s", file))
 
