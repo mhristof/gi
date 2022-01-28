@@ -9,28 +9,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	// ErrorNotGitlab The remote doesnt seem like a Gitlab server
-	ErrorNotGitlab = errors.New("Not a valid Gitlab remote")
-)
+// ErrNotGitlab The remote doesnt seem like a Gitlab server.
+var ErrNotGitlab = errors.New("not a valid Gitlab remote")
 
-// Remote Represent a gitlab remote
+// Remote Represent a gitlab remote.
 type Remote struct {
 	R string
 }
 
-// Valid Checks a remote to see if its a valid gitlab instance
+// Valid Checks a remote to see if its a valid gitlab instance.
 func (r *Remote) Valid() bool {
-	var gitlabURL = regexp.MustCompile(`gitlab`)
+	gitlabURL := regexp.MustCompile(`gitlab`)
 
-	if gitlabURL.MatchString(r.R) {
-		return true
-	}
-
-	return false
+	return gitlabURL.MatchString(r.R)
 }
 
-// URL Return the URL of the remote by sanitizing it
+// URL Return the URL of the remote by sanitizing it.
 func (r *Remote) URL() string {
 	remote := gitlabHTTP(r.R)
 	if remote != "" {
@@ -47,7 +41,6 @@ func (r *Remote) URL() string {
 	}).Error("Not a gitlab remote")
 
 	return ""
-
 }
 
 func gitlabSSH(url string) string {
@@ -61,7 +54,7 @@ func gitlabSSH(url string) string {
 }
 
 func gitlabHTTP(url string) string {
-	var remRegex = regexp.MustCompile(`https://(?P<username>.*):(?P<token>.*)@(?P<url>.*)`)
+	remRegex := regexp.MustCompile(`https://(?P<username>.*):(?P<token>.*)@(?P<url>.*)`)
 	match := remRegex.FindStringSubmatch(url)
 
 	if remRegex.MatchString(url) {
@@ -69,20 +62,20 @@ func gitlabHTTP(url string) string {
 			if name == "url" {
 				return fmt.Sprintf("https://%s", match[i])
 			}
-
 		}
 	}
+
 	return ""
 }
 
-// File Retrieves the file url for the given file. Throws a ErrorNotGitlab
-// if the repository is not a valid gitlab url
+// File Retrieves the file url for the given file. Throws a ErrNotGitlab
+// if the repository is not a valid gitlab url.
 func (r *Remote) File(branch, file string, line int) (string, error) {
 	if !r.Valid() {
-		return "", ErrorNotGitlab
+		return "", ErrNotGitlab
 	}
 
-	branch = strings.Replace(branch, "refs/heads/", "", -1)
+	branch = strings.ReplaceAll(branch, "refs/heads/", "")
 	ret := fmt.Sprintf("%s/-/blob/%s/%s", r.URL(), branch, file)
 
 	if line >= 0 {
