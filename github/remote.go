@@ -69,7 +69,7 @@ func (r *Remote) File(branch, file string, line int) (string, error) {
 	}
 
 	branch = strings.Replace(branch, "refs/heads/", "", -1)
-	ret := fmt.Sprintf("%s/tree/%s/%s", r.URL(), branch, file)
+	ret := fmt.Sprintf("%s/blob/%s/%s", r.URL(), branch, file)
 	if line >= 0 {
 		ret += fmt.Sprintf("#L%d", line)
 	}
