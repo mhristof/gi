@@ -32,8 +32,10 @@ var reviewersCmd = &cobra.Command{
 			}).Panic("cannot get 'branch' flag")
 		}
 
+		branchName, _ := git.Branch()
+
 		log.WithFields(log.Fields{
-			"git.Branch()": git.Branch(),
+			"git.Branch()": branchName,
 			"git.Main()":   git.Main(),
 			"branch":       branch,
 			"args":         args,
@@ -60,7 +62,12 @@ var reviewersCmd = &cobra.Command{
 }
 
 func init() {
-	branch := git.Branch() != git.Main()
+	branch := false
+	branchName, err := git.Branch()
+	if err == nil && branchName == git.Main() {
+		branch = true
+	}
+
 	rootCmd.PersistentFlags().BoolP(
 		"branch", "b", branch,
 		"Detect reviewers for current branch. Enabled when branch name is not 'main'",

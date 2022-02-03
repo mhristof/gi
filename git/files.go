@@ -10,6 +10,7 @@ import (
 
 	"github.com/mhristof/gi/keychain"
 	"github.com/mhristof/gi/util"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 )
@@ -98,7 +99,12 @@ func isTracked(file string) bool {
 
 // FileCodeOwners Figure out who the code owners are for the given file.
 func Blame(file string) map[string]struct{} {
-	branch := Branch()
+	branch, err := Branch()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Error("cannot get current branch")
+	}
 
 	if !isTracked(file) {
 		branch = Main()
@@ -176,15 +182,13 @@ func Main() string {
 	return ret
 }
 
-func Branch() string {
+func Branch() (string, error) {
 	data, err := ioutil.ReadFile(".git/HEAD")
 	if err != nil {
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Panic("cannot open .git/HEAD")
+		return "", errors.Wrap(err, "cannot open .git/HEAD")
 	}
 
-	return strings.TrimSuffix(path.Base(string(data)), "\n")
+	return strings.TrimSuffix(path.Base(string(data)), "\n"), nil
 }
 
 // MergeRequests Find out users that have merged changes into this `file`.
