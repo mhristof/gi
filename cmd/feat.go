@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mhristof/gi/jira"
+	"github.com/mhristof/gi/keychain"
 	"github.com/mhristof/gi/util"
 	"github.com/spf13/cobra"
 )
@@ -78,6 +79,9 @@ func UserGet(cmd *cobra.Command, args []string, toComplete string) ([]string, co
 
 func init() {
 	token := os.Getenv("JIRA_TOKEN")
+	if token == "" {
+		token = keychain.Item("JIRA_TOKEN")
+	}
 	url := os.Getenv("JIRA_URL")
 	user := os.Getenv("JIRA_USER")
 
