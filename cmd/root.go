@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mhristof/gi/git"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-var version = "devel"
+var (
+	version = "devel"
+	gg      *git.Repo
+)
 
 var rootCmd = &cobra.Command{
 	Use:     "gi",
@@ -17,6 +21,20 @@ var rootCmd = &cobra.Command{
 	Version: version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		Verbose(cmd)
+
+		cwd, err := cmd.Flags().GetString("cwd")
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Panic("cannot retrieve cwd flag")
+		}
+
+		gg, err = git.New(cwd)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Error("cannot create git")
+		}
 	},
 }
 

@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mhristof/gi/git"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -15,20 +14,6 @@ var browseCmd = &cobra.Command{
 	Aliases: []string{"b"},
 	Short:   "Find out the URL for any git item",
 	Run: func(cmd *cobra.Command, args []string) {
-		cwd, err := cmd.Flags().GetString("cwd")
-		if err != nil {
-			log.WithFields(log.Fields{
-				"err": err,
-			}).Panic("cannot retrieve cwd flag")
-		}
-
-		gg, err := git.New(cwd)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"err": err,
-			}).Error("cannot create git")
-		}
-
 		targets := []string{gg.Dir}
 
 		if len(args) > 0 {
