@@ -2,26 +2,27 @@ package git
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/mhristof/gi/github"
 	"github.com/mhristof/gi/gitlab"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/ini.v1"
 )
 
 // Repo holds information about a repository.
 type Repo struct {
-	Remote string
+	Git    *git.Repository
 	Dir    string
 	Client API
 }
 
 type API interface {
 	// WebURL return the web URL of the given object
-	WebURL(string) (string, error)
+	WebURL(path, branch string, line int) (string, error)
 	// Valid Return true if the input remote is a valid remote for this client (ie github, gitlab, etc)
 	Valid(string) bool
 }
@@ -30,39 +31,44 @@ type API interface {
 // The directory could be relative or absolute folder or file inside the git
 // repository.
 func New(directory string) (*Repo, error) {
-	absDir, err := filepath.Abs(directory)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot get abs path")
-	}
-
-	absDir, err = findGitFolder(absDir)
+	absDir, err := findGitFolder(directory)
 	if err != nil {
 		return nil, errors.Wrap(err, "Canot find .git folder in "+directory)
 	}
 
-	cfg, err := ini.Load(filepath.Join(absDir, ".git/config"))
+	repo, err := git.PlainOpen(absDir)
 	if err != nil {
-		return nil, errors.Wrap(err, "Cant read .git/config")
+		return nil, errors.Wrap(err, "cannot open git repo")
+	}
+
+	config, err := repo.Config()
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get config")
 	}
 
 	var client API
 
+	remote := config.Remotes["origin"].URLs[0]
 	clients := []API{
-		gitlab.Client{},
-		github.Client{},
+		gitlab.Client{Remote: remote},
+		github.Client{Remote: remote},
 	}
 
 	for _, cl := range clients {
-		if cl.Valid(directory) {
+		if cl.Valid(remote) {
 			client = cl
 
 			break
 		}
 	}
 
+	if client == nil {
+		return nil, errors.New("cannot handle remote")
+	}
+
 	ret := &Repo{
+		Git:    repo,
 		Client: client,
-		Remote: cfg.Section(`remote "origin"`).Key("url").Value(),
 		Dir:    absDir,
 	}
 
@@ -77,7 +83,12 @@ func New(directory string) (*Repo, error) {
 var ErrNotAGitRepo = errors.New("not a git repository")
 
 func findGitFolder(path string) (string, error) {
-	parts := strings.Split(path, "/")
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return "", errors.Wrap(err, "cannot find abs path")
+	}
+
+	parts := strings.Split(abs, "/")
 	for i := len(parts); i > 0; i-- {
 		thisPath := "/" + filepath.Join(parts[0:i]...)
 		thisPathGit := filepath.Join(thisPath, ".git")
@@ -88,6 +99,21 @@ func findGitFolder(path string) (string, error) {
 	}
 
 	return "", ErrNotAGitRepo
+}
+
+func (r *Repo) WebURL(item string, line int) (string, error) {
+	branch, err := r.Git.Head()
+	if err != nil {
+		return "", errors.Wrap(err, "cannot get branch")
+	}
+	branchName := branch.Name().String()
+
+	ret, err := r.Client.WebURL(item, path.Base(branchName), line)
+	if err != nil {
+		return "", errors.Wrap(err, "cannot get URL")
+	}
+
+	return ret, nil
 }
 
 // // Branch Return the current branch of the git repository by reading .git/HEAD

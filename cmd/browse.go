@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/mhristof/gi/git"
 	log "github.com/sirupsen/logrus"
@@ -34,34 +35,30 @@ var browseCmd = &cobra.Command{
 			targets = args
 		}
 
+		line, err := cmd.Flags().GetInt("line")
+		if err != nil {
+			panic(err)
+		}
+
 		for _, target := range targets {
-			if _, err := os.Stat(target); os.IsNotExist(err) {
+			realPath := filepath.Join(gg.Dir, target)
+			if _, err := os.Stat(realPath); os.IsNotExist(err) {
 				log.WithFields(log.Fields{
 					"err":    err,
 					"target": target,
 				}).Error("not found")
 			}
 
-			fmt.Println(fmt.Sprintf("target: %+v %T", target, target))
+			url, err := gg.WebURL(target, line)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":  err,
+					"path": target,
+				}).Error("cannot calculate URL")
+			}
+
+			fmt.Print(url, "\n")
 		}
-
-		line, err := cmd.Flags().GetInt("line")
-		if err != nil {
-			log.WithFields(log.Fields{
-				"err": err,
-			}).Panic("Cannot retrieve line arg")
-		}
-
-		fmt.Println(fmt.Sprintf("line: %+v %T", line, line))
-
-		//url, err := repo.URL(args[0], line)
-		//if err != nil {
-		//log.WithFields(log.Fields{
-		//"err": err,
-		//}).Fatal("Cannot calculate url")
-		//}
-		//fmt.Println(url)
-		// do something
 	},
 }
 
