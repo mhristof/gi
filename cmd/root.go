@@ -38,6 +38,7 @@ func Verbose(cmd *cobra.Command) {
 }
 
 func init() {
+	rootCmd.PersistentFlags().StringP("cwd", "C", ".", "Run as if git was started in <path> instead of the current working directory.")
 	rootCmd.PersistentFlags().CountP("verbose", "v", "Increase verbosity")
 	rootCmd.PersistentFlags().BoolP("dryrun", "n", false, "Dry run")
 }

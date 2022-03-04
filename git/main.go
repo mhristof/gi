@@ -1,51 +1,94 @@
 package git
 
+import (
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/mhristof/gi/github"
+	"github.com/mhristof/gi/gitlab"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/ini.v1"
+)
+
 // Repo holds information about a repository.
 type Repo struct {
 	Remote string
 	Dir    string
+	Client API
 }
 
-// // ErrorNotAGitRepo is thrown when the given folder/config is not a git repository
-// var ErrorNotAGitRepo = errors.New("not a git repository")
+type API interface {
+	// WebURL return the web URL of the given object
+	WebURL(string) (string, error)
+	// Valid Return true if the input remote is a valid remote for this client (ie github, gitlab, etc)
+	Valid(string) bool
+}
 
-// func findGitFolder(path string) (string, error) {
-// 	parts := strings.Split(path, "/")
-// 	for i := len(parts); i > 0; i-- {
-// 		thisPath := "/" + filepath.Join(parts[0:i]...)
-// 		thisPathGit := filepath.Join(thisPath, ".git")
-// 		if info, err := os.Stat(thisPathGit); err == nil && info.IsDir() {
-// 			return thisPath, nil
-// 		}
-// 	}
+// New Create a new git repository object from the given directory.
+// The directory could be relative or absolute folder or file inside the git
+// repository.
+func New(directory string) (*Repo, error) {
+	absDir, err := filepath.Abs(directory)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get abs path")
+	}
 
-// 	return "", ErrorNotAGitRepo
-// }
+	absDir, err = findGitFolder(absDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "Canot find .git folder in "+directory)
+	}
 
-// // New Create a new git repository object from the given directory.
-// // The directory could be relative or absolute folder or file inside the git
-// // repository
-// func New(directory string) (*Repo, error) {
-// 	absDir, err := filepath.Abs(directory)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	cfg, err := ini.Load(filepath.Join(absDir, ".git/config"))
+	if err != nil {
+		return nil, errors.Wrap(err, "Cant read .git/config")
+	}
 
-// 	absDir, err = findGitFolder(absDir)
-// 	if err != nil {
-// 		return nil, errors.Wrap(err, "Canot find .git folder in "+directory)
-// 	}
+	var client API
 
-// 	cfg, err := ini.Load(filepath.Join(absDir, ".git/config"))
-// 	if err != nil {
-// 		return nil, errors.Wrap(err, "Cant read .git/config")
-// 	}
+	clients := []API{
+		gitlab.Client{},
+		github.Client{},
+	}
 
-// 	return &Repo{
-// 		Remote: cfg.Section(`remote "origin"`).Key("url").Value(),
-// 		Dir:    absDir,
-// 	}, nil
-// }
+	for _, cl := range clients {
+		if cl.Valid(directory) {
+			client = cl
+
+			break
+		}
+	}
+
+	ret := &Repo{
+		Client: client,
+		Remote: cfg.Section(`remote "origin"`).Key("url").Value(),
+		Dir:    absDir,
+	}
+
+	log.WithFields(log.Fields{
+		"ret": ret,
+	}).Debug("created git object")
+
+	return ret, nil
+}
+
+// ErrNotAGitRepo is thrown when the given folder/config is not a git repository.
+var ErrNotAGitRepo = errors.New("not a git repository")
+
+func findGitFolder(path string) (string, error) {
+	parts := strings.Split(path, "/")
+	for i := len(parts); i > 0; i-- {
+		thisPath := "/" + filepath.Join(parts[0:i]...)
+		thisPathGit := filepath.Join(thisPath, ".git")
+
+		if info, err := os.Stat(thisPathGit); err == nil && info.IsDir() {
+			return thisPath, nil
+		}
+	}
+
+	return "", ErrNotAGitRepo
+}
 
 // // Branch Return the current branch of the git repository by reading .git/HEAD
 // func (r *Repo) Branch() string {
