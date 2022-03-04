@@ -115,3 +115,33 @@ func (r *Repo) WebURL(item string, line int) (string, error) {
 
 	return ret, nil
 }
+
+// Reviewers Returns a map of authors and the percentage of line changes they
+// have in the current file.
+func (r *Repo) Reviewers(item string) (map[string]int, error) {
+	head, err := r.Git.Head()
+	if err != nil {
+		return map[string]int{}, errors.Wrap(err, "cannot get Head")
+	}
+
+	commit, err := r.Git.CommitObject(head.Hash())
+	if err != nil {
+		return map[string]int{}, errors.Wrap(err, "cannot get commit object")
+	}
+
+	blame, err := git.Blame(commit, item)
+	if err != nil {
+		return map[string]int{}, errors.Wrap(err, "cannot blame")
+	}
+
+	authors := map[string]int{}
+	for _, line := range blame.Lines {
+		authors[line.Author]++
+	}
+
+	for author, lines := range authors {
+		authors[author] = (lines * 100) / len(blame.Lines)
+	}
+
+	return authors, nil
+}

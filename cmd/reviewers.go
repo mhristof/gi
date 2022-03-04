@@ -5,6 +5,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/mhristof/gi/git"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +23,21 @@ var reviewersCmd = &cobra.Command{
 		Cache file: %s
 	`), git.CacheLocation()),
 	Run: func(cmd *cobra.Command, args []string) {
+		reviewers := map[string]int
+
+		for _, file := range args {
+			rev, err := gg.Reviewers(file)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":  err,
+					"file": file,
+				}).Error("cannot get reviewers for file")
+
+				continue
+			}
+		}
+
+		fmt.Println(fmt.Sprintf("reviewers: %+v %T", reviewers, reviewers))
 	},
 }
 
