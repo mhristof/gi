@@ -1,12 +1,14 @@
 package git
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/mhristof/gi/github"
 	"github.com/mhristof/gi/gitlab"
 	"github.com/pkg/errors"
@@ -102,13 +104,12 @@ func findGitFolder(path string) (string, error) {
 }
 
 func (r *Repo) WebURL(item string, line int) (string, error) {
-	branch, err := r.Git.Head()
+	branch, err := r.Branch()
 	if err != nil {
 		return "", errors.Wrap(err, "cannot get branch")
 	}
-	branchName := branch.Name().String()
 
-	ret, err := r.Client.WebURL(item, path.Base(branchName), line)
+	ret, err := r.Client.WebURL(item, branch, line)
 	if err != nil {
 		return "", errors.Wrap(err, "cannot get URL")
 	}
@@ -144,4 +145,78 @@ func (r *Repo) Reviewers(item string) (map[string]int, error) {
 	}
 
 	return authors, nil
+}
+
+func (r *Repo) Branch() (string, error) {
+	branch, err := r.Git.Head()
+	if err != nil {
+		return "", errors.Wrap(err, "cannot get branch")
+	}
+	branchName := branch.Name().String()
+
+	return path.Base(branchName), nil
+}
+
+func (r *Repo) BranchReviewers() (map[string]int, error) {
+	branch, err := r.Branch()
+	if err != nil {
+		return map[string]int{}, errors.Wrap(err, "cannot get current branch")
+	}
+
+	files, err := r.FilesChanged(branch, "master")
+	if err != nil {
+		return map[string]int{}, errors.Wrap(err, "cannot calculate files changes")
+	}
+
+	fmt.Println(fmt.Sprintf("files: %+v %T", files, files))
+
+	return map[string]int{}, nil
+}
+
+func (r *Repo) FilesChanged(src, dest string) ([]string, error) {
+	tree, err := r.BranchTree(src)
+	if err != nil {
+		return []string{}, errors.Wrap(err, "cannot get src tree")
+	}
+
+	treeDest, err := r.BranchTree(dest)
+	if err != nil {
+		return []string{}, errors.Wrap(err, "cannot get dest tree")
+	}
+
+	changes, err := object.DiffTree(tree, treeDest)
+	if err != nil {
+		return []string{}, errors.Wrap(err, "cannot get diff from src and dest")
+	}
+
+	files := make([]string, len(changes))
+	for i, change := range changes {
+		files[i] = strings.TrimSuffix(strings.Fields(change.String())[3], ">")
+	}
+
+	return files, nil
+}
+
+func (r *Repo) BranchTree(name string) (*object.Tree, error) {
+	branch, err := r.Git.Branch(name)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get branch")
+	}
+
+	ref, err := r.Git.Reference(branch.Merge, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get dest branch ref")
+	}
+
+	commit, err := r.Git.CommitObject(ref.Hash())
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get dest branch commit")
+	}
+
+	tree, err := commit.Tree()
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get dest branch tree")
+	}
+
+	return tree, nil
 }
