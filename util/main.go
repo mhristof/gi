@@ -1,81 +1,73 @@
 package util
 
-import (
-	"bytes"
-	"os/exec"
-	"strings"
+// // Eval Run a system command and return the stdout lines.
+// func Eval(command string) []string {
+// 	log.WithFields(log.Fields{
+// 		"command": command,
+// 	}).Trace("eval")
+// 	cmd := exec.Command("/bin/bash", "-c", command)
 
-	log "github.com/sirupsen/logrus"
-)
+// 	var stdout, stderr bytes.Buffer
+// 	cmd.Stdout = &stdout
+// 	cmd.Stderr = &stderr
+// 	err := cmd.Run()
+// 	outStr := stdout.String()
 
-// Eval Run a system command and return the stdout lines.
-func Eval(command string) []string {
-	log.WithFields(log.Fields{
-		"command": command,
-	}).Trace("eval")
-	cmd := exec.Command("/bin/bash", "-c", command)
+// 	if err != nil {
+// 		log.WithFields(log.Fields{
+// 			"outStr":  outStr,
+// 			"command": command,
+// 		}).Error("failed command")
+// 	}
 
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	outStr := stdout.String()
+// 	return strings.Split(outStr, "\n")
+// }
 
-	if err != nil {
-		log.WithFields(log.Fields{
-			"outStr":  outStr,
-			"command": command,
-		}).Error("failed command")
-	}
+// // Keys Returns a list of keys for the given map.
+// func Keys(in map[string]struct{}) []string {
+// 	var ret []string
+// 	for key := range in {
+// 		ret = append(ret, key)
+// 	}
 
-	return strings.Split(outStr, "\n")
-}
+// 	return ret
+// }
 
-// Keys Returns a list of keys for the given map.
-func Keys(in map[string]struct{}) []string {
-	var ret []string
-	for key := range in {
-		ret = append(ret, key)
-	}
+// // Uniq Return a uniq list of items in the input list.
+// func Uniq(in []string) []string {
+// 	m := map[string]struct{}{}
 
-	return ret
-}
+// 	for _, item := range in {
+// 		m[item] = struct{}{}
+// 	}
 
-// Uniq Return a uniq list of items in the input list.
-func Uniq(in []string) []string {
-	m := map[string]struct{}{}
+// 	return Keys(m)
+// }
 
-	for _, item := range in {
-		m[item] = struct{}{}
-	}
+// func Subtract(haystack []string, remove []string) []string {
+// 	rem := map[string]bool{}
 
-	return Keys(m)
-}
+// 	for _, k := range remove {
+// 		rem[k] = true
+// 	}
 
-func Subtract(haystack []string, remove []string) []string {
-	rem := map[string]bool{}
+// 	var diff []string
 
-	for _, k := range remove {
-		rem[k] = true
-	}
+// 	for _, item := range haystack {
+// 		if _, ok := rem[item]; ok {
+// 			continue
+// 		}
 
-	var diff []string
+// 		diff = append(diff, item)
+// 	}
 
-	for _, item := range haystack {
-		if _, ok := rem[item]; ok {
-			continue
-		}
+// 	return diff
+// }
 
-		diff = append(diff, item)
-	}
+// func Merge(a, b map[string]struct{}) map[string]struct{} {
+// 	for k, v := range b {
+// 		a[k] = v
+// 	}
 
-	return diff
-}
-
-func Merge(a, b map[string]struct{}) map[string]struct{} {
-	for k, v := range b {
-		a[k] = v
-	}
-
-	return a
-}
+// 	return a
+// }

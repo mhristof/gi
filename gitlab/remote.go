@@ -1,86 +1,77 @@
 package gitlab
 
-import (
-	"errors"
-	"fmt"
-	"regexp"
-	"strings"
+// // ErrNotGitlab The remote doesnt seem like a Gitlab server.
+// var ErrNotGitlab = errors.New("not a valid Gitlab remote")
 
-	log "github.com/sirupsen/logrus"
-)
+// // Remote Represent a gitlab remote.
+// type Remote struct {
+// 	R string
+// }
 
-// ErrNotGitlab The remote doesnt seem like a Gitlab server.
-var ErrNotGitlab = errors.New("not a valid Gitlab remote")
+// // Valid Checks a remote to see if its a valid gitlab instance.
+// func (r *Remote) Valid() bool {
+// 	gitlabURL := regexp.MustCompile(`gitlab`)
 
-// Remote Represent a gitlab remote.
-type Remote struct {
-	R string
-}
+// 	return gitlabURL.MatchString(r.R)
+// }
 
-// Valid Checks a remote to see if its a valid gitlab instance.
-func (r *Remote) Valid() bool {
-	gitlabURL := regexp.MustCompile(`gitlab`)
+// // URL Return the URL of the remote by sanitizing it.
+// func (r *Remote) URL() string {
+// 	remote := gitlabHTTP(r.R)
+// 	if remote != "" {
+// 		return remote
+// 	}
 
-	return gitlabURL.MatchString(r.R)
-}
+// 	remote = gitlabSSH(r.R)
+// 	if remote != "" {
+// 		return remote
+// 	}
 
-// URL Return the URL of the remote by sanitizing it.
-func (r *Remote) URL() string {
-	remote := gitlabHTTP(r.R)
-	if remote != "" {
-		return remote
-	}
+// 	log.WithFields(log.Fields{
+// 		"r.R": r.R,
+// 	}).Error("Not a gitlab remote")
 
-	remote = gitlabSSH(r.R)
-	if remote != "" {
-		return remote
-	}
+// 	return ""
+// }
 
-	log.WithFields(log.Fields{
-		"r.R": r.R,
-	}).Error("Not a gitlab remote")
+// func gitlabSSH(url string) string {
+// 	if !strings.HasPrefix(url, "git@gitlab.com:") {
+// 		return ""
+// 	}
 
-	return ""
-}
+// 	url = strings.TrimSuffix(url, ".git")
 
-func gitlabSSH(url string) string {
-	if !strings.HasPrefix(url, "git@gitlab.com:") {
-		return ""
-	}
+// 	return strings.Replace(url, "git@gitlab.com:", "https://gitlab.com/", 1)
+// }
 
-	url = strings.TrimSuffix(url, ".git")
+// func gitlabHTTP(url string) string {
+// 	remRegex := regexp.MustCompile(`https://(?P<username>.*):(?P<token>.*)@(?P<url>.*)`)
+// 	match := remRegex.FindStringSubmatch(url)
 
-	return strings.Replace(url, "git@gitlab.com:", "https://gitlab.com/", 1)
-}
+// 	if remRegex.MatchString(url) {
+// 		for i, name := range remRegex.SubexpNames() {
+// 			if name == "url" {
+// 				return fmt.Sprintf("https://%s", match[i])
+// 			}
+// 		}
+// 	}
 
-func gitlabHTTP(url string) string {
-	remRegex := regexp.MustCompile(`https://(?P<username>.*):(?P<token>.*)@(?P<url>.*)`)
-	match := remRegex.FindStringSubmatch(url)
+// 	return ""
+// }
 
-	if remRegex.MatchString(url) {
-		for i, name := range remRegex.SubexpNames() {
-			if name == "url" {
-				return fmt.Sprintf("https://%s", match[i])
-			}
-		}
-	}
+// // File Retrieves the file url for the given file. Throws a ErrNotGitlab
+// // if the repository is not a valid gitlab url.
+// func (r *Remote) File(branch, file string, line int) (string, error) {
+// 	if !r.Valid() {
+// 		return "", ErrNotGitlab
+// 	}
 
-	return ""
-}
+// 	branch = strings.ReplaceAll(branch, "refs/heads/", "")
+// 	ret := fmt.Sprintf("%s/-/blob/%s/%s", r.URL(), branch, file)
 
-// File Retrieves the file url for the given file. Throws a ErrNotGitlab
-// if the repository is not a valid gitlab url.
-func (r *Remote) File(branch, file string, line int) (string, error) {
-	if !r.Valid() {
-		return "", ErrNotGitlab
-	}
+// 	if line >= 0 {
+// 		ret += fmt.Sprintf("#L%d", line)
+// 	}
 
-	branch = strings.ReplaceAll(branch, "refs/heads/", "")
-	ret := fmt.Sprintf("%s/-/blob/%s/%s", r.URL(), branch, file)
-
-	if line >= 0 {
-		ret += fmt.Sprintf("#L%d", line)
-	}
-
-	return ret, nil
-}
+// 	return ret, nil
+// }

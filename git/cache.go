@@ -1,61 +1,52 @@
 package git
 
-import (
-	"encoding/json"
-	"io/ioutil"
-	"os"
+// func userCacheDump(cache map[string]string) {
+// 	cacheJSON, err := json.MarshalIndent(cache, "", "    ")
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	"github.com/adrg/xdg"
-	log "github.com/sirupsen/logrus"
-)
+// 	cachePath := CacheLocation()
 
-func userCacheDump(cache map[string]string) {
-	cacheJSON, err := json.MarshalIndent(cache, "", "    ")
-	if err != nil {
-		panic(err)
-	}
+// 	err = os.WriteFile(cachePath, cacheJSON, 0644)
+// 	if err != nil {
+// 		log.WithFields(log.Fields{
+// 			"err":       err,
+// 			"cachePath": cachePath,
+// 		}).Error("cannot write cache file")
+// 	}
+// }
 
-	cachePath := CacheLocation()
+// func userCacheLoad() map[string]string {
+// 	cachePath := CacheLocation()
 
-	err = os.WriteFile(cachePath, cacheJSON, 0644)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err":       err,
-			"cachePath": cachePath,
-		}).Error("cannot write cache file")
-	}
-}
+// 	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
+// 		return map[string]string{}
+// 	}
 
-func userCacheLoad() map[string]string {
-	cachePath := CacheLocation()
+// 	data, err := ioutil.ReadFile(cachePath)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
-		return map[string]string{}
-	}
+// 	var cache map[string]string
 
-	data, err := ioutil.ReadFile(cachePath)
-	if err != nil {
-		panic(err)
-	}
+// 	err = json.Unmarshal(data, &cache)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	var cache map[string]string
+// 	return cache
+// }
 
-	err = json.Unmarshal(data, &cache)
-	if err != nil {
-		panic(err)
-	}
+// // CacheLocation Provides a cache location for user emails.
+// func CacheLocation() string {
+// 	cachePath, err := xdg.CacheFile("gi-reviewers/emails.json")
+// 	if err != nil {
+// 		log.WithFields(log.Fields{
+// 			"err": err,
+// 		}).Panic("cannot get a cache path")
+// 	}
 
-	return cache
-}
-
-// CacheLocation Provides a cache location for user emails.
-func CacheLocation() string {
-	cachePath, err := xdg.CacheFile("gi-reviewers/emails.json")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Panic("cannot get a cache path")
-	}
-
-	return cachePath
-}
+// 	return cachePath
+// }

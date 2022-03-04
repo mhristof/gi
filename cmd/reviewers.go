@@ -1,82 +1,71 @@
 package cmd
 
-import (
-	"fmt"
-	"strings"
+// var reviewersCmd = &cobra.Command{
+// 	Use:   "reviewers",
+// 	Short: "Find out who need to review git code.",
+// 	Long: fmt.Sprintf(heredoc.Doc(`
+// 		Find out people with code changes for files and repositories.
 
-	"github.com/MakeNowJust/heredoc"
-	"github.com/mhristof/gi/git"
-	"github.com/mhristof/gi/util"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-)
+// 		If a file is passed, then 'git blame' is used as well as any merges
+// 		that touch the file provided.
 
-var reviewersCmd = &cobra.Command{
-	Use:   "reviewers",
-	Short: "Find out who need to review git code.",
-	Long: fmt.Sprintf(heredoc.Doc(`
-		Find out people with code changes for files and repositories.
+// 		If no argument is provided, then all files are checked from the repository
 
-		If a file is passed, then 'git blame' is used as well as any merges
-		that touch the file provided.
+// 		Cache file: %s
+// 	`), git.CacheLocation()),
+// 	Run: func(cmd *cobra.Command, args []string) {
+// 		branch, err := cmd.Flags().GetBool("branch")
+// 		if err != nil {
+// 			log.WithFields(log.Fields{
+// 				"err": err,
+// 			}).Panic("cannot get 'branch' flag")
+// 		}
 
-		If no argument is provided, then all files are checked from the repository
+// 		branchName, _ := git.Branch()
 
-		Cache file: %s
-	`), git.CacheLocation()),
-	Run: func(cmd *cobra.Command, args []string) {
-		branch, err := cmd.Flags().GetBool("branch")
-		if err != nil {
-			log.WithFields(log.Fields{
-				"err": err,
-			}).Panic("cannot get 'branch' flag")
-		}
+// 		log.WithFields(log.Fields{
+// 			"git.Branch()": branchName,
+// 			"git.Main()":   git.Main(),
+// 			"branch":       branch,
+// 			"args":         args,
+// 		}).Debug("current branch")
 
-		branchName, _ := git.Branch()
+// 		if len(args) == 0 {
+// 			if branch {
+// 				args = util.Eval(fmt.Sprintf("git diff --name-only %s", git.Main()))
+// 				// empty line at the end of the array
+// 				args = args[0 : len(args)-1]
+// 			} else {
+// 				args = git.Files()
+// 			}
+// 		}
 
-		log.WithFields(log.Fields{
-			"git.Branch()": branchName,
-			"git.Main()":   git.Main(),
-			"branch":       branch,
-			"args":         args,
-		}).Debug("current branch")
+// 		g := git.NewFromFiles(args)
 
-		if len(args) == 0 {
-			if branch {
-				args = util.Eval(fmt.Sprintf("git diff --name-only %s", git.Main()))
-				// empty line at the end of the array
-				args = args[0 : len(args)-1]
-			} else {
-				args = git.Files()
-			}
-		}
+// 		log.WithFields(log.Fields{
+// 			"g": fmt.Sprintf("%+v", g),
+// 		}).Debug("Reviewers")
 
-		g := git.NewFromFiles(args)
+// 		fmt.Println(strings.Join(g.Reviewers(), ","))
+// 	},
+// }
 
-		log.WithFields(log.Fields{
-			"g": fmt.Sprintf("%+v", g),
-		}).Debug("Reviewers")
+// func init() {
+// 	branch := false
+// 	branchName, err := git.Branch()
+// 	if err == nil && branchName == git.Main() {
+// 		branch = true
+// 	}
 
-		fmt.Println(strings.Join(g.Reviewers(), ","))
-	},
-}
-
-func init() {
-	branch := false
-	branchName, err := git.Branch()
-	if err == nil && branchName == git.Main() {
-		branch = true
-	}
-
-	rootCmd.PersistentFlags().BoolP(
-		"branch", "b", branch,
-		"Detect reviewers for current branch. Enabled when branch name is not 'main'",
-	)
-	rootCmd.PersistentFlags().StringSliceP(
-		"bots", "",
-		[]string{"semantic-release-bot@martynus.net"},
-		"Bot list definition. Used with --human",
-	)
-	rootCmd.PersistentFlags().BoolP("human", "H", true, "Show human reviewers only.")
-	rootCmd.AddCommand(reviewersCmd)
-}
+// 	rootCmd.PersistentFlags().BoolP(
+// 		"branch", "b", branch,
+// 		"Detect reviewers for current branch. Enabled when branch name is not 'main'",
+// 	)
+// 	rootCmd.PersistentFlags().StringSliceP(
+// 		"bots", "",
+// 		[]string{"semantic-release-bot@martynus.net"},
+// 		"Bot list definition. Used with --human",
+// 	)
+// 	rootCmd.PersistentFlags().BoolP("human", "H", true, "Show human reviewers only.")
+// 	rootCmd.AddCommand(reviewersCmd)
+// }

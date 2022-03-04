@@ -1,135 +1,122 @@
 package git
 
-import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"strings"
+// func curl(url string) []byte {
+// 	req, _ := http.NewRequest("GET", url, nil)
+// 	req.Header.Set("PRIVATE-TOKEN", keychain.Item("GITLAB_TOKEN"))
 
-	"github.com/mhristof/gi/keychain"
-	"github.com/mhristof/gi/util"
-	log "github.com/sirupsen/logrus"
-)
+// 	client := &http.Client{}
 
-func curl(url string) []byte {
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Set("PRIVATE-TOKEN", keychain.Item("GITLAB_TOKEN"))
+// 	log.WithFields(log.Fields{
+// 		"req": req,
+// 	}).Debug("curl")
 
-	client := &http.Client{}
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer resp.Body.Close()
 
-	log.WithFields(log.Fields{
-		"req": req,
-	}).Debug("curl")
+// 	body, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
+// 	return body
+// }
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
+// type ApprovalRulesResp []struct {
+// 	ApprovalsRequired    int64 `json:"approvals_required"`
+// 	ContainsHiddenGroups bool  `json:"contains_hidden_groups"`
+// 	EligibleApprovers    []struct {
+// 		AvatarURL string `json:"avatar_url"`
+// 		ID        int64  `json:"id"`
+// 		Name      string `json:"name"`
+// 		State     string `json:"state"`
+// 		Username  string `json:"username"`
+// 		WebURL    string `json:"web_url"`
+// 	} `json:"eligible_approvers"`
+// 	Groups            []interface{} `json:"groups"`
+// 	ID                int64         `json:"id"`
+// 	Name              string        `json:"name"`
+// 	ProtectedBranches []struct {
+// 		AllowForcePush            bool  `json:"allow_force_push"`
+// 		CodeOwnerApprovalRequired bool  `json:"code_owner_approval_required"`
+// 		ID                        int64 `json:"id"`
+// 		MergeAccessLevels         []struct {
+// 			AccessLevel            int64       `json:"access_level"`
+// 			AccessLevelDescription string      `json:"access_level_description"`
+// 			GroupID                interface{} `json:"group_id"`
+// 			UserID                 interface{} `json:"user_id"`
+// 		} `json:"merge_access_levels"`
+// 		Name             string `json:"name"`
+// 		PushAccessLevels []struct {
+// 			AccessLevel            int64       `json:"access_level"`
+// 			AccessLevelDescription string      `json:"access_level_description"`
+// 			GroupID                interface{} `json:"group_id"`
+// 			UserID                 int64       `json:"user_id"`
+// 		} `json:"push_access_levels"`
+// 		UnprotectAccessLevels []interface{} `json:"unprotect_access_levels"`
+// 	} `json:"protected_branches"`
+// 	RuleType string `json:"rule_type"`
+// 	Users    []struct {
+// 		AvatarURL string `json:"avatar_url"`
+// 		ID        int64  `json:"id"`
+// 		Name      string `json:"name"`
+// 		State     string `json:"state"`
+// 		Username  string `json:"username"`
+// 		WebURL    string `json:"web_url"`
+// 	} `json:"users"`
+// }
 
-	return body
-}
+// func RemoteURL() string {
+// 	url := strings.TrimSuffix(util.Eval("git config --get remote.origin.url")[0], "\n")
 
-type ApprovalRulesResp []struct {
-	ApprovalsRequired    int64 `json:"approvals_required"`
-	ContainsHiddenGroups bool  `json:"contains_hidden_groups"`
-	EligibleApprovers    []struct {
-		AvatarURL string `json:"avatar_url"`
-		ID        int64  `json:"id"`
-		Name      string `json:"name"`
-		State     string `json:"state"`
-		Username  string `json:"username"`
-		WebURL    string `json:"web_url"`
-	} `json:"eligible_approvers"`
-	Groups            []interface{} `json:"groups"`
-	ID                int64         `json:"id"`
-	Name              string        `json:"name"`
-	ProtectedBranches []struct {
-		AllowForcePush            bool  `json:"allow_force_push"`
-		CodeOwnerApprovalRequired bool  `json:"code_owner_approval_required"`
-		ID                        int64 `json:"id"`
-		MergeAccessLevels         []struct {
-			AccessLevel            int64       `json:"access_level"`
-			AccessLevelDescription string      `json:"access_level_description"`
-			GroupID                interface{} `json:"group_id"`
-			UserID                 interface{} `json:"user_id"`
-		} `json:"merge_access_levels"`
-		Name             string `json:"name"`
-		PushAccessLevels []struct {
-			AccessLevel            int64       `json:"access_level"`
-			AccessLevelDescription string      `json:"access_level_description"`
-			GroupID                interface{} `json:"group_id"`
-			UserID                 int64       `json:"user_id"`
-		} `json:"push_access_levels"`
-		UnprotectAccessLevels []interface{} `json:"unprotect_access_levels"`
-	} `json:"protected_branches"`
-	RuleType string `json:"rule_type"`
-	Users    []struct {
-		AvatarURL string `json:"avatar_url"`
-		ID        int64  `json:"id"`
-		Name      string `json:"name"`
-		State     string `json:"state"`
-		Username  string `json:"username"`
-		WebURL    string `json:"web_url"`
-	} `json:"users"`
-}
+// 	return url
+// }
 
-func RemoteURL() string {
-	url := strings.TrimSuffix(util.Eval("git config --get remote.origin.url")[0], "\n")
+// func Project() string {
+// 	remote := RemoteURL()
 
-	return url
-}
+// 	if !strings.HasPrefix(remote, "git@gitlab.com") {
+// 		log.WithFields(log.Fields{
+// 			"remote": remote,
+// 		}).Warning("cannot handle remote")
 
-func Project() string {
-	remote := RemoteURL()
+// 		return ""
+// 	}
 
-	if !strings.HasPrefix(remote, "git@gitlab.com") {
-		log.WithFields(log.Fields{
-			"remote": remote,
-		}).Warning("cannot handle remote")
+// 	project := strings.TrimSuffix(
+// 		strings.Split(remote, ":")[1],
+// 		".git",
+// 	)
 
-		return ""
-	}
+// 	return project
+// }
 
-	project := strings.TrimSuffix(
-		strings.Split(remote, ":")[1],
-		".git",
-	)
+// func EligibleApprovers() (map[string]struct{}, int64) {
+// 	var resp ApprovalRulesResp
 
-	return project
-}
+// 	data := curl(fmt.Sprintf(
+// 		"https://gitlab.com/api/v4/projects/%s/approval_rules",
+// 		url.QueryEscape(Project()),
+// 	))
 
-func EligibleApprovers() (map[string]struct{}, int64) {
-	var resp ApprovalRulesResp
+// 	err := json.Unmarshal(data, &resp)
+// 	if err != nil {
+// 		log.WithFields(log.Fields{
+// 			"err": err,
+// 		}).Debug("cannot decode gitlab response")
 
-	data := curl(fmt.Sprintf(
-		"https://gitlab.com/api/v4/projects/%s/approval_rules",
-		url.QueryEscape(Project()),
-	))
+// 		return map[string]struct{}{}, 0
+// 	}
 
-	err := json.Unmarshal(data, &resp)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Debug("cannot decode gitlab response")
+// 	users := map[string]struct{}{}
 
-		return map[string]struct{}{}, 0
-	}
+// 	for _, item := range resp {
+// 		for _, user := range item.EligibleApprovers {
+// 			users[user.Username] = struct{}{}
+// 		}
+// 	}
 
-	users := map[string]struct{}{}
-
-	for _, item := range resp {
-		for _, user := range item.EligibleApprovers {
-			users[user.Username] = struct{}{}
-		}
-	}
-
-	return users, resp[0].ApprovalsRequired
-}
+// 	return users, resp[0].ApprovalsRequired
+// }
