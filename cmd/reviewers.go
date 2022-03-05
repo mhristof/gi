@@ -12,8 +12,9 @@ import (
 )
 
 var reviewersCmd = &cobra.Command{
-	Use:   "reviewers",
-	Short: "Find out who need to review git code.",
+	Use:     "reviewers",
+	Short:   "Find out who need to review git code.",
+	Aliases: []string{"r"},
 	Long: heredoc.Doc(`
 		Find out people with code changes for files and repositories.
 

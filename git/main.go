@@ -7,9 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/mhristof/gi/github"
 	"github.com/mhristof/gi/gitlab"
 	"github.com/mhristof/gi/util"
@@ -41,9 +44,39 @@ func New(directory string) (*Repo, error) {
 		return nil, errors.Wrap(err, "Canot find .git folder in "+directory)
 	}
 
-	repo, err := git.PlainOpen(absDir)
+	repoD, err := git.PlainOpen(absDir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot open [%s]", directory)
+	}
+
+	configD, err := repoD.Config()
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get git config")
+	}
+
+	fs := memfs.New()
+	storer := memory.NewStorage()
+
+	repo, err := git.Clone(storer, fs, &git.CloneOptions{
+		URL: directory,
+		// Depth:        100,
+		// SingleBranch: false,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot open git repo")
+	}
+
+	opts := &git.FetchOptions{
+		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
+	}
+
+	if err := repo.Fetch(opts); err != nil {
+		return nil, errors.Wrap(err, "cannot fetch branches to inmem clone")
+	}
+
+	err := repo.SetConfig(configD)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot set inmem config")
 	}
 
 	config, err := repo.Config()
@@ -186,6 +219,7 @@ func (r *Repo) BranchName() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "cannot get branch")
 	}
+
 	branchName := branch.Name().String()
 
 	return path.Base(branchName), nil
@@ -226,6 +260,16 @@ func (r *Repo) BranchReviewers() (map[string]int, error) {
 	if err != nil {
 		return map[string]int{}, errors.Wrap(err, "cannot get current branch")
 	}
+
+	branches, err := r.Git.Branches()
+	if err != nil {
+		panic(err)
+	}
+
+	branches.ForEach(func(r *plumbing.Reference) error {
+		fmt.Println(fmt.Sprintf("r.String(): %+v %T", r.String(), r.String()))
+		return nil
+	})
 
 	main, err := r.Main()
 	if err != nil {

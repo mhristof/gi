@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/mhristof/gi/keychain"
 	"github.com/pkg/errors"
 	glab "github.com/xanzy/go-gitlab"
 )
@@ -56,17 +55,17 @@ func ssh2https(remote string) string {
 }
 
 func New(remote string) Client {
-	api, err := glab.NewClient(
-		keychain.Item("GITLAB_READONLY_TOKEN"),
-		glab.WithBaseURL("https://gitlab.com/api/v4"),
-	)
-	if err != nil {
-		panic(err)
-	}
+	//api, err := glab.NewClient(
+	//keychain.Item("GITLAB_READONLY_TOKEN"),
+	//glab.WithBaseURL("https://gitlab.com/api/v4"),
+	//)
+	//if err != nil {
+	//panic(err)
+	//}
 
 	return Client{
 		Remote: ssh2https(remote),
-		api:    api,
+		// api:    api,
 	}
 }
 

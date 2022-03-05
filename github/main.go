@@ -32,6 +32,7 @@ func ssh2https(remote string) string {
 	remote = strings.TrimPrefix(remote, "git@")
 	remote = strings.TrimSuffix(remote, ".git")
 	remote = strings.ReplaceAll(remote, ":", "/")
+
 	return "https://" + remote
 }
 
