@@ -55,6 +55,10 @@ var reviewersCmd = &cobra.Command{
 		ignore := viper.GetStringSlice("ignore")
 		list := util.SortMap(reviewers)
 
+		log.WithFields(log.Fields{
+			"reviewers": reviewers,
+		}).Debug("list of reviewers")
+
 		for i := 0; i < count; i++ {
 			if i >= len(list) {
 				break

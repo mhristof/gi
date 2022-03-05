@@ -154,6 +154,10 @@ func (r *Repo) Reviewers(item string) (map[string]int, error) {
 		authors[author] = (lines * 100) / len(blame.Lines)
 	}
 
+	log.WithFields(log.Fields{
+		"authors": authors,
+		"file":    item,
+	}).Debug("git blame")
 	return authors, nil
 }
 
@@ -242,6 +246,11 @@ func (r *Repo) BranchReviewers() (map[string]int, error) {
 
 			continue
 		}
+
+		log.WithFields(log.Fields{
+			"authors": fileAuthors,
+			"file":    file,
+		}).Debug("git blame")
 
 		authors = util.MapMerge(authors, fileAuthors)
 	}
