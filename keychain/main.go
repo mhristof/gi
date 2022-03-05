@@ -1,34 +1,42 @@
 package keychain
 
-// func Item(name string) string {
-// 	env := os.Getenv(name)
-// 	if env != "" {
-// 		return env
-// 	}
+import (
+	"os"
+	"strings"
 
-// 	query := kchain.NewItem()
-// 	query.SetSecClass(kchain.SecClassGenericPassword)
-// 	query.SetService("germ")
-// 	query.SetAccount(name)
-// 	query.SetAccessGroup("germ")
-// 	// query.SetMatchLimit(kchain.MatchLimitOne)
-// 	query.SetReturnData(true)
-// 	results, err := kchain.QueryItem(query)
-// 	if err != nil {
-// 		log.WithFields(log.Fields{
-// 			"err": err,
-// 		}).Debug("cannot query keychain")
+	kchain "github.com/keybase/go-keychain"
+	log "github.com/sirupsen/logrus"
+)
 
-// 		return ""
-// 	} else if len(results) != 1 {
-// 		log.WithFields(log.Fields{
-// 			"results": results,
-// 		}).Debug("item not found")
+func Item(name string) string {
+	env := os.Getenv(name)
+	if env != "" {
+		return env
+	}
 
-// 		return ""
-// 	}
+	query := kchain.NewItem()
+	query.SetSecClass(kchain.SecClassGenericPassword)
+	query.SetService("germ")
+	query.SetAccount(name)
+	query.SetAccessGroup("germ")
+	// query.SetMatchLimit(kchain.MatchLimitOne)
+	query.SetReturnData(true)
+	results, err := kchain.QueryItem(query)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Debug("cannot query keychain")
 
-// 	// data will be in the form of
-// 	// export GITLAB_TOKEN='token'
-// 	return strings.Split(string(results[0].Data), "'")[1]
-// }
+		return ""
+	} else if len(results) != 1 {
+		log.WithFields(log.Fields{
+			"results": results,
+		}).Debug("item not found")
+
+		return ""
+	}
+
+	// data will be in the form of
+	// export GITLAB_TOKEN='token'
+	return strings.Split(string(results[0].Data), "'")[1]
+}

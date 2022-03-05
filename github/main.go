@@ -34,3 +34,7 @@ func ssh2https(remote string) string {
 	remote = strings.ReplaceAll(remote, ":", "/")
 	return "https://" + remote
 }
+
+func (c Client) TransformReviewers(emails map[string]int) map[string]int {
+	return emails
+}

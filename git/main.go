@@ -29,6 +29,7 @@ type API interface {
 	WebURL(path, branch string, line int) (string, error)
 	// Valid Return true if the input remote is a valid remote for this client (ie github, gitlab, etc)
 	Valid(string) bool
+	TransformReviewers(map[string]int) map[string]int
 }
 
 // New Create a new git repository object from the given directory.
@@ -54,7 +55,7 @@ func New(directory string) (*Repo, error) {
 
 	remote := config.Remotes["origin"].URLs[0]
 	clients := []API{
-		gitlab.Client{Remote: remote},
+		gitlab.New(remote),
 		github.Client{Remote: remote},
 	}
 
@@ -158,7 +159,7 @@ func (r *Repo) Reviewers(item string) (map[string]int, error) {
 		"authors": authors,
 		"file":    item,
 	}).Debug("git blame")
-	return authors, nil
+	return r.Client.TransformReviewers(authors), nil
 }
 
 func (r *Repo) BlameFromBranch(file, branch string) (*git.BlameResult, error) {
@@ -255,7 +256,7 @@ func (r *Repo) BranchReviewers() (map[string]int, error) {
 		authors = util.MapMerge(authors, fileAuthors)
 	}
 
-	return authors, nil
+	return r.Client.TransformReviewers(authors), nil
 }
 
 func (r *Repo) BranchFilesChanged(src, dest string) ([]string, error) {
