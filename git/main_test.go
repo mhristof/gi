@@ -1,122 +1,76 @@
 package git
 
-// func eval(args []string) {
-// 	cmd := exec.Command(args[0], args[1:]...)
-// 	err := cmd.Run()
-// 	if err != nil {
-// 		log.WithFields(log.Fields{
-// 			"err":  err,
-// 			"args": args,
-// 		}).Panic("Cannot execute command")
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+	"testing"
 
-// 	}
-// }
+	"github.com/mhristof/gi/util"
+	"github.com/stretchr/testify/assert"
+)
 
-// func newRepo(remote, branch, file string) string {
-// 	dir, err := ioutil.TempDir("", "")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+func NewGit(t *testing.T, commands []string) (string, func()) {
+	t.Helper()
 
-// 	eval([]string{"bash", "-c", fmt.Sprintf("cd %s && git init", dir)})
+	dir, err := ioutil.TempDir("", "git")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	eval([]string{"git", "-C", dir, "remote", "add", "origin", remote})
+	script(t, append([]string{
+		"cd " + dir,
+		"git init",
+		"git remote add origin https://github.com/user/repo.git",
+		"touch hi",
+		"git add hi",
+		"git commit -m 'hi'",
+	}, commands...))
 
-// 	eval([]string{"git", "-C", dir, "checkout", "-b", branch})
-// 	eval([]string{"mkdir", "-p", filepath.Join(dir, filepath.Dir(file))})
-// 	eval([]string{"touch", filepath.Join(dir, file)})
+	return dir, func() {
+		os.RemoveAll(dir)
+	}
+}
 
-// 	return dir
-// }
+func script(t *testing.T, commands []string) {
+	t.Helper()
 
-// func TestURL(t *testing.T) {
-// 	var cases = []struct {
-// 		name     string
-// 		remote   string
-// 		file     string
-// 		path     string
-// 		branch   string
-// 		expected string
-// 	}{
-// 		{
-// 			name:     "gitlab https remote with username and token on master",
-// 			remote:   "https://glUsernames:glToken@gitlab.com/project/repository",
-// 			branch:   "master",
-// 			file:     "README.md",
-// 			expected: "https://gitlab.com/project/repository/-/blob/master/README.md#L0",
-// 		},
-// 		{
-// 			name:     "gitlab https remote with username and token on a branch",
-// 			remote:   "https://glUsernames:glToken@gitlab.com/project/repository",
-// 			branch:   "branch",
-// 			file:     "README.md",
-// 			expected: "https://gitlab.com/project/repository/-/blob/branch/README.md#L0",
-// 		},
-// 		{
-// 			name:     "github remote",
-// 			remote:   "https://github.com/user/repo.git",
-// 			branch:   "branch",
-// 			file:     "README.md",
-// 			expected: "https://github.com/user/repo/blob/branch/README.md#L0",
-// 		},
-// 		{
-// 			name:     "codecommit repo",
-// 			remote:   "https://git-codecommit.region.amazonaws.com/v1/repos/foobar",
-// 			branch:   "branch",
-// 			file:     "test/readme.md",
-// 			expected: "https://region.console.aws.amazon.com/codesuite/codecommit/repositories/foobar/browse/refs/heads/branch/--/test/readme.md?region=region#L0-0",
-// 		},
-// 	}
+	_, _, err := util.Bash(strings.Join(commands, " && "))
+	if err != nil {
+		t.Fatal(err)
+	}
+}
 
-// 	for _, test := range cases {
-// 		dir := newRepo(test.remote, test.branch, test.file)
-// 		defer os.RemoveAll(dir)
+func TestBranchFilesChanged(t *testing.T) {
+	cases := []struct {
+		name     string
+		setup    []string
+		expected []string
+	}{
+		{
+			name: "simple case",
+			setup: []string{
+				"touch c && git add c && git commit -am 'add c'",
+				"touch d && git add d && git commit -am 'add d'",
+				"git checkout -b testing1",
+				"touch a && git add a && git commit -am 'add a'",
+				"touch b && git add b && git commit -am 'add b'",
+				"date >> d && git add d && git commit -am 'update d'",
+			},
+			expected: []string{"a", "b", "d"},
+		},
+	}
 
-// 		repo, err := New(dir)
+	for _, test := range cases {
+		dir, _ := NewGit(t, test.setup)
 
-// 		assert.Nil(t, err, test.name)
+		gg, err := New(dir)
+		assert.Nil(t, err, test.name)
 
-// 		url, err := repo.URL(filepath.Join(dir, test.file), 0)
-// 		assert.Nil(t, err, test.name)
-
-// 		assert.Equal(t, test.expected, url, test.name)
-// 	}
-// }
-
-// func TestFindGitFolder(t *testing.T) {
-// 	var cases = []struct {
-// 		name string
-// 		dir  string
-// 		file string
-// 		err  error
-// 	}{
-// 		{
-// 			name: "file in root",
-// 			dir:  newRepo("", "master", "foo"),
-// 			file: "foo",
-// 			err:  nil,
-// 		},
-// 		{
-// 			name: "file in folder",
-// 			dir:  newRepo("", "master", "foo/bar"),
-// 			file: "foo/bar",
-// 			err:  nil,
-// 		},
-// 		{
-// 			name: "file not in repo",
-// 			dir:  "/tmp",
-// 			file: "/tmp/foobar",
-// 			err:  ErrorNotAGitRepo,
-// 		},
-// 	}
-
-// 	for _, test := range cases {
-// 		abs, err := filepath.Abs(test.file)
-// 		path, err := findGitFolder(filepath.Join(test.dir, abs))
-
-// 		assert.Equal(t, test.err, err, test.name)
-// 		if test.err == nil {
-// 			assert.Equal(t, test.dir, path, test.name)
-// 		}
-// 	}
-// }
+		files, err := gg.BranchFilesChanged("testing1", "main")
+		assert.Nil(t, err, test.name)
+		assert.Equal(t, test.expected, files, test.name)
+		fmt.Println(fmt.Sprintf("dir: %+v %T", dir, dir))
+	}
+}

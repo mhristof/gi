@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/mhristof/gi/github"
 	"github.com/mhristof/gi/gitlab"
@@ -157,13 +158,44 @@ func (r *Repo) Branch() (string, error) {
 	return path.Base(branchName), nil
 }
 
+func (r *Repo) Main() (string, error) {
+	branches, err := r.Git.Branches()
+	if err != nil {
+		panic(err)
+	}
+
+	var main string
+
+	branches.ForEach(func(r *plumbing.Reference) error {
+		if strings.Contains(r.String(), "main") {
+			main = "main"
+		}
+
+		if strings.Contains(r.String(), "master") {
+			main = "master"
+		}
+		return nil
+	})
+
+	if main == "" {
+		return "", errors.New("cannot find main branch")
+	}
+
+	return main, nil
+}
+
 func (r *Repo) BranchReviewers() (map[string]int, error) {
 	branch, err := r.Branch()
 	if err != nil {
 		return map[string]int{}, errors.Wrap(err, "cannot get current branch")
 	}
 
-	files, err := r.FilesChanged(branch, "master")
+	main, err := r.Main()
+	if err != nil {
+		return map[string]int{}, errors.Wrap(err, " cannot find main branch")
+	}
+
+	files, err := r.BranchFilesChanged(branch, main)
 	if err != nil {
 		return map[string]int{}, errors.Wrap(err, "cannot calculate files changes")
 	}
@@ -173,7 +205,7 @@ func (r *Repo) BranchReviewers() (map[string]int, error) {
 	return map[string]int{}, nil
 }
 
-func (r *Repo) FilesChanged(src, dest string) ([]string, error) {
+func (r *Repo) BranchFilesChanged(src, dest string) ([]string, error) {
 	tree, err := r.BranchTree(src)
 	if err != nil {
 		return []string{}, errors.Wrap(err, "cannot get src tree")
@@ -198,12 +230,28 @@ func (r *Repo) FilesChanged(src, dest string) ([]string, error) {
 }
 
 func (r *Repo) BranchTree(name string) (*object.Tree, error) {
-	branch, err := r.Git.Branch(name)
+	branches, err := r.Git.Branches()
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot get branch")
+		panic(err)
 	}
 
-	ref, err := r.Git.Reference(branch.Merge, true)
+	var branch plumbing.ReferenceName
+
+	_ = branches.ForEach(func(r *plumbing.Reference) error {
+		if path.Base(r.Name().String()) == name {
+			branch = r.Name()
+
+			return nil
+		}
+
+		return nil
+	})
+
+	if branch.String() == "" {
+		return nil, fmt.Errorf("branch not found [%s]", name)
+	}
+
+	ref, err := r.Git.Reference(branch, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get dest branch ref")
 	}
