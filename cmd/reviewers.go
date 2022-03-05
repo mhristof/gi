@@ -1,13 +1,12 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/mhristof/gi/git"
 	"github.com/mhristof/gi/util"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -15,33 +14,36 @@ import (
 var reviewersCmd = &cobra.Command{
 	Use:   "reviewers",
 	Short: "Find out who need to review git code.",
-	Long: fmt.Sprintf(heredoc.Doc(`
+	Long: heredoc.Doc(`
 		Find out people with code changes for files and repositories.
 
-		If a file is passed, then 'git blame' is used as well as any merges
-		that touch the file provided.
-
-		If no argument is provided, then all files are checked from the repository
-
-		Cache file: %s
-	`), git.CacheLocation()),
-	Args: func(cmd *cobra.Command, args []string) error {
-		branch, err := cmd.Flags().GetBool("branch")
-		if err != nil {
-			panic(err)
-		}
-
-		if len(args) > 0 && branch {
-			return errors.New("cannot use branch flag and provide args")
-		}
-		return nil
-	},
+		If a file is provided, only that file will be checked.
+		If no files are provided, the reviewers for the current branch will
+		be calculated.
+	`),
 	Run: func(cmd *cobra.Command, args []string) {
-		ignore := viper.GetStringSlice("ignore")
+		reviewers := map[string]int{}
+		var err error
 
-		reviewers, err := gg.BranchReviewers()
-		if err != nil {
-			panic(err)
+		if len(args) == 0 {
+			reviewers, err = gg.BranchReviewers()
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			for _, file := range args {
+				fileR, err := gg.Reviewers(file)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"err":  err,
+						"file": fileR,
+					}).Warning("cannot get reviewers")
+
+					continue
+				}
+
+				reviewers = util.MapMerge(reviewers, fileR)
+			}
 		}
 
 		count, err := cmd.Flags().GetInt("count")
@@ -50,8 +52,9 @@ var reviewersCmd = &cobra.Command{
 		}
 
 		author := []string{}
-
+		ignore := viper.GetStringSlice("ignore")
 		list := util.SortMap(reviewers)
+
 		for i := 0; i < count; i++ {
 			if i >= len(list) {
 				break
@@ -79,7 +82,6 @@ var reviewersCmd = &cobra.Command{
 func init() {
 	reviewersCmd.PersistentFlags().StringSliceP("ignore", "i", []string{}, "Ignore authors")
 	reviewersCmd.PersistentFlags().IntP("count", "c", 4, "Number of reviewers to show")
-	reviewersCmd.PersistentFlags().BoolP("branch", "b", true, "Calculate reviewers for the current branch changes")
 
 	viper.BindPFlag("ignore", reviewersCmd.PersistentFlags().Lookup("ignore"))
 
