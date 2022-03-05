@@ -12,6 +12,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/mhristof/gi/github"
 	"github.com/mhristof/gi/gitlab"
+	"github.com/mhristof/gi/util"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -105,7 +106,7 @@ func findGitFolder(path string) (string, error) {
 }
 
 func (r *Repo) WebURL(item string, line int) (string, error) {
-	branch, err := r.Branch()
+	branch, err := r.BranchName()
 	if err != nil {
 		return "", errors.Wrap(err, "cannot get branch")
 	}
@@ -133,7 +134,15 @@ func (r *Repo) Reviewers(item string) (map[string]int, error) {
 
 	blame, err := git.Blame(commit, item)
 	if err != nil {
-		return map[string]int{}, errors.Wrap(err, "cannot blame")
+		mainName, err := r.Main()
+		if err != nil {
+			return map[string]int{}, errors.Wrap(err, "cannot get main branch name")
+		}
+
+		blame, err = r.BlameFromBranch(item, mainName)
+		if err != nil {
+			return map[string]int{}, errors.Wrap(err, "cannot blame")
+		}
 	}
 
 	authors := map[string]int{}
@@ -148,7 +157,26 @@ func (r *Repo) Reviewers(item string) (map[string]int, error) {
 	return authors, nil
 }
 
-func (r *Repo) Branch() (string, error) {
+func (r *Repo) BlameFromBranch(file, branch string) (*git.BlameResult, error) {
+	branchR := r.Branch(branch)
+	if branchR == nil {
+		return nil, fmt.Errorf("cannot find branch [%s]", branch)
+	}
+
+	commit, err := r.Git.CommitObject(branchR.Hash())
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot get commit object for [%s]", branch)
+	}
+
+	blame, err := git.Blame(commit, file)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot blame file [%s] from [%s]", file, branch)
+	}
+
+	return blame, nil
+}
+
+func (r *Repo) BranchName() (string, error) {
 	branch, err := r.Git.Head()
 	if err != nil {
 		return "", errors.Wrap(err, "cannot get branch")
@@ -158,34 +186,38 @@ func (r *Repo) Branch() (string, error) {
 	return path.Base(branchName), nil
 }
 
-func (r *Repo) Main() (string, error) {
+func (r *Repo) Branch(name string) *plumbing.Reference {
 	branches, err := r.Git.Branches()
 	if err != nil {
 		panic(err)
 	}
 
-	var main string
+	var branch *plumbing.Reference
 
 	branches.ForEach(func(r *plumbing.Reference) error {
-		if strings.Contains(r.String(), "main") {
-			main = "main"
+		if strings.Contains(r.String(), name) {
+			branch = r
 		}
 
-		if strings.Contains(r.String(), "master") {
-			main = "master"
-		}
 		return nil
 	})
 
-	if main == "" {
-		return "", errors.New("cannot find main branch")
+	return branch
+}
+
+func (r *Repo) Main() (string, error) {
+	for _, main := range []string{"main", "master"} {
+		m := r.Branch(main)
+		if m != nil {
+			return main, nil
+		}
 	}
 
-	return main, nil
+	return "", errors.New("cannot find main branch")
 }
 
 func (r *Repo) BranchReviewers() (map[string]int, error) {
-	branch, err := r.Branch()
+	branch, err := r.BranchName()
 	if err != nil {
 		return map[string]int{}, errors.Wrap(err, "cannot get current branch")
 	}
@@ -200,9 +232,21 @@ func (r *Repo) BranchReviewers() (map[string]int, error) {
 		return map[string]int{}, errors.Wrap(err, "cannot calculate files changes")
 	}
 
-	fmt.Println(fmt.Sprintf("files: %+v %T", files, files))
+	authors := map[string]int{}
+	for _, file := range files {
+		fileAuthors, err := r.Reviewers(file)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Warning("cannot blame file")
 
-	return map[string]int{}, nil
+			continue
+		}
+
+		authors = util.MapMerge(authors, fileAuthors)
+	}
+
+	return authors, nil
 }
 
 func (r *Repo) BranchFilesChanged(src, dest string) ([]string, error) {

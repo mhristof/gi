@@ -3,9 +3,11 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/mhristof/gi/git"
+	"github.com/mhristof/gi/util"
 	"github.com/spf13/cobra"
 )
 
@@ -34,23 +36,33 @@ var reviewersCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		//branch, err := cmd.Flags().GetBool("branch")
-		//if err != nil {
-		//panic(err)
-		//}
-
-		// if branch {
 		reviewers, err := gg.BranchReviewers()
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println(fmt.Sprintf("reviewers: %+v %T", reviewers, reviewers))
-		//}
+		count, err := cmd.Flags().GetInt("count")
+		if err != nil {
+			panic(err)
+		}
+
+		author := []string{}
+
+		list := util.SortMap(reviewers)
+		for i := 0; i < count; i++ {
+			if i >= len(list) {
+				break
+			}
+
+			author = append(author, list[i].Key)
+		}
+
+		fmt.Println(strings.Join(author, ","))
 	},
 }
 
 func init() {
+	reviewersCmd.PersistentFlags().IntP("count", "c", 4, "Number of reviewers to show")
 	reviewersCmd.PersistentFlags().BoolP("branch", "b", true, "Calculate reviewers for the current branch changes")
 	rootCmd.AddCommand(reviewersCmd)
 }
