@@ -5,13 +5,16 @@ import (
 	"os"
 
 	"github.com/mhristof/gi/git"
+	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
 	version = "devel"
 	gg      *git.Repo
+	cfgFile = ""
 )
 
 var rootCmd = &cobra.Command{
@@ -56,6 +59,7 @@ func Verbose(cmd *cobra.Command) {
 }
 
 func init() {
+	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringP("cwd", "C", ".", "Run as if git was started in <path> instead of the current working directory.")
 	rootCmd.PersistentFlags().CountP("verbose", "v", "Increase verbosity")
 	rootCmd.PersistentFlags().BoolP("dryrun", "n", false, "Dry run")
@@ -65,6 +69,27 @@ func init() {
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+func initConfig() {
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		// Find home directory.
+		home, err := homedir.Dir()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		viper.AddConfigPath(home)
+		viper.SetConfigName(".gi")
+	}
+
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Println("Can't read config:", err)
 		os.Exit(1)
 	}
 }

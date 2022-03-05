@@ -9,6 +9,7 @@ import (
 	"github.com/mhristof/gi/git"
 	"github.com/mhristof/gi/util"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var reviewersCmd = &cobra.Command{
@@ -36,6 +37,8 @@ var reviewersCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		ignore := viper.GetStringSlice("ignore")
+
 		reviewers, err := gg.BranchReviewers()
 		if err != nil {
 			panic(err)
@@ -54,6 +57,18 @@ var reviewersCmd = &cobra.Command{
 				break
 			}
 
+			found := false
+			for _, ignored := range ignore {
+				if ignored == list[i].Key {
+					found = true
+					break
+				}
+			}
+
+			if found {
+				continue
+			}
+
 			author = append(author, list[i].Key)
 		}
 
@@ -62,7 +77,11 @@ var reviewersCmd = &cobra.Command{
 }
 
 func init() {
+	reviewersCmd.PersistentFlags().StringSliceP("ignore", "i", []string{}, "Ignore authors")
 	reviewersCmd.PersistentFlags().IntP("count", "c", 4, "Number of reviewers to show")
 	reviewersCmd.PersistentFlags().BoolP("branch", "b", true, "Calculate reviewers for the current branch changes")
+
+	viper.BindPFlag("ignore", reviewersCmd.PersistentFlags().Lookup("ignore"))
+
 	rootCmd.AddCommand(reviewersCmd)
 }
