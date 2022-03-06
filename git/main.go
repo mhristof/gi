@@ -74,7 +74,7 @@ func New(directory string) (*Repo, error) {
 		return nil, errors.Wrap(err, "cannot fetch branches to inmem clone")
 	}
 
-	err := repo.SetConfig(configD)
+	err = repo.SetConfig(configD)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot set inmem config")
 	}
@@ -260,16 +260,6 @@ func (r *Repo) BranchReviewers() (map[string]int, error) {
 	if err != nil {
 		return map[string]int{}, errors.Wrap(err, "cannot get current branch")
 	}
-
-	branches, err := r.Git.Branches()
-	if err != nil {
-		panic(err)
-	}
-
-	branches.ForEach(func(r *plumbing.Reference) error {
-		fmt.Println(fmt.Sprintf("r.String(): %+v %T", r.String(), r.String()))
-		return nil
-	})
 
 	main, err := r.Main()
 	if err != nil {
