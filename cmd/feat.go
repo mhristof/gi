@@ -35,6 +35,7 @@ var featCmd = &cobra.Command{
 		title = strings.ReplaceAll(title, "\t", "-")
 		title = strings.ReplaceAll(title, ":", "-")
 		title = strings.ReplaceAll(title, "--", "-")
+		title = strings.ReplaceAll(title, ",", "-")
 
 		util.Bash(fmt.Sprintf("git checkout -b %s", title))
 	},
