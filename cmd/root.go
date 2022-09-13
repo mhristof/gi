@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/mhristof/gi/git"
 	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
@@ -18,16 +19,16 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:     "gi",
-	Short:   "A git helper",
-	Long:    heredoc.Doc(`
+	Use:   "gi",
+	Short: "A git helper",
+	Long: heredoc.Doc(`
 		You can add your config in ~/.gi.yaml, for example
 
 			---
 			ignore:
 			  - semantic-release-bot@martynus.net
 			  - semantic-release-bot
-	`)
+	`),
 
 	Version: version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
