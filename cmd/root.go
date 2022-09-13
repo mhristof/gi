@@ -20,7 +20,15 @@ var (
 var rootCmd = &cobra.Command{
 	Use:     "gi",
 	Short:   "A git helper",
-	Long:    `TODO: changeme`,
+	Long:    heredoc.Doc(`
+		You can add your config in ~/.gi.yaml, for example
+
+			---
+			ignore:
+			  - semantic-release-bot@martynus.net
+			  - semantic-release-bot
+	`)
+
 	Version: version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		Verbose(cmd)
