@@ -35,4 +35,4 @@ help:           ## Show this help.
 	@grep '.*:.*##' Makefile | grep -v grep  | sort | sed 's/:.*## /:/g' | column -t -s:
 
 install: ./bin/gi.darwin
-	cp ./bin/gi.darwin ~/bin/gi
+	cp ./bin/gi.darwin ~/.local/bin/gi
