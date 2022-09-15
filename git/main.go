@@ -57,8 +57,12 @@ func New(directory string) (*Repo, error) {
 	fs := memfs.New()
 	storer := memory.NewStorage()
 
+	log.WithFields(log.Fields{
+		"absDir": absDir,
+	}).Debug("cloning git")
+
 	repo, err := git.Clone(storer, fs, &git.CloneOptions{
-		URL: directory,
+		URL: absDir,
 		// Depth:        100,
 		// SingleBranch: false,
 	})
