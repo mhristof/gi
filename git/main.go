@@ -6,6 +6,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
@@ -44,10 +45,17 @@ func New(directory string) (*Repo, error) {
 		return nil, errors.Wrap(err, "Canot find .git folder in "+directory)
 	}
 
+	start := time.Now()
 	repoD, err := git.PlainOpen(absDir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open [%s]", directory)
 	}
+
+	t := time.Now()
+	elapsed := t.Sub(start)
+	log.WithFields(log.Fields{
+		"elapsed": elapsed,
+	}).Debug("git.PlainOpen")
 
 	configD, err := repoD.Config()
 	if err != nil {
@@ -61,14 +69,19 @@ func New(directory string) (*Repo, error) {
 		"absDir": absDir,
 	}).Debug("cloning git")
 
+	start = time.Now()
 	repo, err := git.Clone(storer, fs, &git.CloneOptions{
 		URL: absDir,
-		// Depth:        100,
-		// SingleBranch: false,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot open git repo")
 	}
+
+	t = time.Now()
+	elapsed = t.Sub(start)
+	log.WithFields(log.Fields{
+		"elapsed": elapsed,
+	}).Debug("git.Clone")
 
 	opts := &git.FetchOptions{
 		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
