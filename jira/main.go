@@ -73,7 +73,7 @@ func (c *Client) Issues() []Issue {
 		panic(err)
 	}
 
-	err = os.WriteFile(c.cache, body, 0644)
+	err = os.WriteFile(c.cache, body, 0o644)
 	if err != nil {
 		panic(err)
 	}

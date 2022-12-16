@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/mhristof/gi/git"
@@ -25,6 +26,9 @@ var rootCmd = &cobra.Command{
 		You can add your config in ~/.gi.yaml, for example
 
 			---
+			skipGitInit:
+			  - largeRepo
+			  - largeRepo1
 			ignore:
 			  - semantic-release-bot@martynus.net
 			  - semantic-release-bot
@@ -34,11 +38,31 @@ var rootCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		Verbose(cmd)
 
+		fmt.Println(fmt.Sprintf("args: %+v %T", args, args))
+
 		cwd, err := cmd.Flags().GetString("cwd")
 		if err != nil {
 			log.WithFields(log.Fields{
 				"err": err,
 			}).Panic("cannot retrieve cwd flag")
+		}
+
+		gitRoot, err := git.Root(cwd)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Panic("cannot find git root")
+		}
+
+		repoName := path.Base(gitRoot)
+
+		for _, skip := range viper.GetStringSlice("skipGitInit") {
+			if skip == repoName {
+				log.WithFields(log.Fields{
+					"name": repoName,
+				}).Warning("skipping git.New()")
+				return
+			}
 		}
 
 		gg, err = git.New(cwd)

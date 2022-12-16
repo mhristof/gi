@@ -36,6 +36,14 @@ type API interface {
 	TransformReviewers(map[string]int) map[string]int
 }
 
+func Root(directory string) (string, error) {
+	absDir, err := findGitFolder(directory)
+	if err != nil {
+		return "", errors.Wrap(err, "Canot find .git folder in "+directory)
+	}
+	return absDir, nil
+}
+
 // New Create a new git repository object from the given directory.
 // The directory could be relative or absolute folder or file inside the git
 // repository.
