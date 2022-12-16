@@ -38,8 +38,6 @@ var rootCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		Verbose(cmd)
 
-		fmt.Println(fmt.Sprintf("args: %+v %T", args, args))
-
 		cwd, err := cmd.Flags().GetString("cwd")
 		if err != nil {
 			log.WithFields(log.Fields{
