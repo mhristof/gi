@@ -15,6 +15,9 @@ builds:
       - darwin
     ldflags:
       - -X github.com/mhristof/gi/cmd.version={{.Version}}
+    goarch:
+      - amd64
+      - arm64
 archives:
   - replacements:
       darwin: Darwin
