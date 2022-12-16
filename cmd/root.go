@@ -63,13 +63,24 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
-		gg, err = git.New(cwd)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"err": err,
-			}).Error("cannot create git")
-		}
+		gg = gitNew(cmd)
 	},
+}
+
+func gitNew(cmd *cobra.Command) *git.Repo {
+	cwd, err := cmd.Flags().GetString("cwd")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Panic("cannot retrieve cwd flag")
+	}
+	gg, err = git.New(cwd)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Error("cannot create git")
+	}
+	return gg
 }
 
 // Verbose Increase verbosity.
