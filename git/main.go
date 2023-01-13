@@ -47,7 +47,7 @@ func Root(directory string) (string, error) {
 // New Create a new git repository object from the given directory.
 // The directory could be relative or absolute folder or file inside the git
 // repository.
-func New(directory string) (*Repo, error) {
+func New(directory string, clone bool) (*Repo, error) {
 	absDir, err := findGitFolder(directory)
 	if err != nil {
 		return nil, errors.Wrap(err, "Canot find .git folder in "+directory)
@@ -70,38 +70,49 @@ func New(directory string) (*Repo, error) {
 		return nil, errors.Wrap(err, "cannot get git config")
 	}
 
-	fs := memfs.New()
-	storer := memory.NewStorage()
+	var repo *git.Repository
 
-	log.WithFields(log.Fields{
-		"absDir": absDir,
-	}).Debug("cloning git")
+	if clone {
+		fs := memfs.New()
+		storer := memory.NewStorage()
 
-	start = time.Now()
-	repo, err := git.Clone(storer, fs, &git.CloneOptions{
-		URL: absDir,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot open git repo")
-	}
+		log.WithFields(log.Fields{
+			"absDir": absDir,
+		}).Debug("cloning git")
 
-	t = time.Now()
-	elapsed = t.Sub(start)
-	log.WithFields(log.Fields{
-		"elapsed": elapsed,
-	}).Debug("git.Clone")
+		start = time.Now()
+		repo, err = git.Clone(storer, fs, &git.CloneOptions{
+			URL: absDir,
+		})
 
-	opts := &git.FetchOptions{
-		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
-	}
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot open git repo")
+		}
 
-	if err := repo.Fetch(opts); err != nil {
-		return nil, errors.Wrap(err, "cannot fetch branches to inmem clone")
-	}
+		t = time.Now()
+		elapsed = t.Sub(start)
+		log.WithFields(log.Fields{
+			"elapsed": elapsed,
+		}).Debug("git.Clone")
 
-	err = repo.SetConfig(configD)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot set inmem config")
+		opts := &git.FetchOptions{
+			RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
+		}
+
+		if err := repo.Fetch(opts); err != nil {
+			return nil, errors.Wrap(err, "cannot fetch branches to inmem clone")
+		}
+
+		err = repo.SetConfig(configD)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot set inmem config")
+		}
+
+	} else {
+		repo, err = git.PlainOpen(absDir)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot open git: %s", absDir)
+		}
 	}
 
 	config, err := repo.Config()

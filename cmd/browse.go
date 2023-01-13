@@ -14,9 +14,6 @@ var browseCmd = &cobra.Command{
 	Aliases: []string{"b"},
 	Short:   "Find out the URL for any git item",
 	Run: func(cmd *cobra.Command, args []string) {
-		if gg == nil {
-			gg = gitNew(cmd)
-		}
 		targets := []string{gg.Dir}
 
 		if len(args) > 0 {

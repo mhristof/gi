@@ -59,25 +59,29 @@ var rootCmd = &cobra.Command{
 				log.WithFields(log.Fields{
 					"name": repoName,
 				}).Warning("skipping git.New()")
+
+				gg = gitNew(cmd, false)
+
 				return
 			}
 		}
 
-		gg = gitNew(cmd)
+		gg = gitNew(cmd, true)
 	},
 }
 
-func gitNew(cmd *cobra.Command) *git.Repo {
+func gitNew(cmd *cobra.Command, skip bool) *git.Repo {
 	cwd, err := cmd.Flags().GetString("cwd")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
 		}).Panic("cannot retrieve cwd flag")
 	}
-	gg, err = git.New(cwd)
+	gg, err = git.New(cwd, skip)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"err": err,
+			"err":  err,
+			"skip": skip,
 		}).Error("cannot create git")
 	}
 	return gg
