@@ -45,22 +45,26 @@ var featCmd = &cobra.Command{
 func UserGet(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	jiraToken, err := cmd.Flags().GetString("jira-token")
 	if err != nil {
-		panic(err)
+		return []string{}, 0
 	}
 
 	jiraURL, err := cmd.Flags().GetString("jira-url")
 	if err != nil {
-		panic(err)
+		return []string{}, 0
 	}
 
 	jiraUser, err := cmd.Flags().GetString("jira-user")
 	if err != nil {
-		panic(err)
+		return []string{}, 0
 	}
 
 	clearCache, err := cmd.Flags().GetBool("clear-cache")
 	if err != nil {
-		panic(err)
+		return []string{}, 0
+	}
+
+	if jiraURL == "" {
+		return []string{}, 0
 	}
 
 	j := jira.New(jiraURL, jiraUser, jiraToken)
