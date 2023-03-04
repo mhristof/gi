@@ -63,11 +63,13 @@ func UserGet(cmd *cobra.Command, args []string, toComplete string) ([]string, co
 		return []string{}, 0
 	}
 
+	jql, _ := cmd.Flags().GetString("jira-issues-jql")
+
 	if jiraURL == "" {
 		return []string{}, 0
 	}
 
-	j := jira.New(jiraURL, jiraUser, jiraToken)
+	j := jira.New(jiraURL, jiraUser, jiraToken, jql)
 
 	if clearCache {
 		j.ClearCache()
@@ -90,10 +92,15 @@ func init() {
 	}
 	url := os.Getenv("JIRA_URL")
 	user := os.Getenv("JIRA_USER")
+	jql := os.Getenv("JIRA_JQL")
+	if jql == "" {
+		jql = "assignee%20in%20(currentUser())%20AND%20status%20!%3D%20DONE"
+	}
 
 	featCmd.PersistentFlags().BoolP("clear-cache", "c", false, "Clear cache")
 	featCmd.PersistentFlags().StringP("jira-token", "t", token, "Jira token")
 	featCmd.PersistentFlags().StringP("jira-url", "", url, "Jira url")
 	featCmd.PersistentFlags().StringP("jira-user", "u", user, "jira username")
+	featCmd.PersistentFlags().StringP("jira-issues-jql", "J", jql, "jira JQL filter for my issues")
 	rootCmd.AddCommand(featCmd)
 }

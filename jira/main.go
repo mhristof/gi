@@ -15,6 +15,7 @@ type Client struct {
 	token string
 	user  string
 	cache string
+	jql   string
 }
 
 func (c *Client) ClearCache() {
@@ -43,7 +44,7 @@ func (c *Client) Issues() []Issue {
 		return ret
 	}
 
-	url := c.url + "/rest/api/3/search?jql=assignee%20%3D%20currentUser()%20AND%20Status%20!%3D%20CLOSED%20AND%20Status%20!%3D%20DONE%20AND%20Status%20!%3D%20REJECTED%20AND%20Status%20!%3D%20COMPLETED"
+	url := c.url + "/rest/api/3/search?jql=" + c.jql
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -81,7 +82,7 @@ func (c *Client) Issues() []Issue {
 	return issues.Issues
 }
 
-func New(url, user, token string) *Client {
+func New(url, user, token, jql string) *Client {
 	cache, err := xdg.CacheFile("gfeat")
 	if err != nil {
 		panic(err)
@@ -92,6 +93,7 @@ func New(url, user, token string) *Client {
 		user:  user,
 		token: token,
 		cache: cache,
+		jql:   jql,
 	}
 }
 
