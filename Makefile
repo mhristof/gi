@@ -35,4 +35,5 @@ help:           ## Show this help.
 	@grep '.*:.*##' Makefile | grep -v grep  | sort | sed 's/:.*## /:/g' | column -t -s:
 
 install: ./bin/gi.darwin
+	rm ~/.local/bin/gi # macos permissions are bound to the current executable
 	cp ./bin/gi.darwin ~/.local/bin/gi
